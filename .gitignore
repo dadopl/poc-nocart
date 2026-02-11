@@ -1,0 +1,10 @@
+/vendor/
+/.idea/
+*.log
+*.cache
+.phpunit.result.cache
+/var/
+.env.local
+.env.*.local
+.php-cs-fixer.cache
+

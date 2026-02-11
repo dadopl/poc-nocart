@@ -1,0 +1,9 @@
+framework:
+    messenger:
+        transports:
+            kafka_consumer:
+                dsn: 'kafka://%env(KAFKA_BROKERS)%?topics=cart-events,shipping-events,payment-events,promotion-events,services-events&group=checkout-consumer'
+
+        routing:
+            # Eventy zewnętrzne nie są routowane - są tylko konsumowane
+            'Nocart\SharedKernel\Infrastructure\Messenger\Message\ExternalEventMessage': kafka_consumer

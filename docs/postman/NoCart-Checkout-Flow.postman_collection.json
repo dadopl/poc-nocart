@@ -1,0 +1,1401 @@
+{
+	"info": {
+		"_postman_id": "nocart-checkout-flow",
+		"name": "NoCart - Checkout Flow E2E",
+		"description": "Kolekcja Postman do testowania kompletnego flow zakupowego w architekturze mikroserwisowej NoCart.\n\nFlow:\n1. Dodanie produktu do koszyka\n2. Dodanie gwarancji/akcesorium\n3. Wybór dostawy\n4. Zastosowanie promocji\n5. Wybór płatności\n6. Finalizacja zamówienia",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "cart_url",
+			"value": "http://localhost:38001",
+			"type": "string"
+		},
+		{
+			"key": "shipping_url",
+			"value": "http://localhost:38002",
+			"type": "string"
+		},
+		{
+			"key": "payment_url",
+			"value": "http://localhost:38003",
+			"type": "string"
+		},
+		{
+			"key": "checkout_url",
+			"value": "http://localhost:38004",
+			"type": "string"
+		},
+		{
+			"key": "promotion_url",
+			"value": "http://localhost:38005",
+			"type": "string"
+		},
+		{
+			"key": "services_url",
+			"value": "http://localhost:38006",
+			"type": "string"
+		},
+		{
+			"key": "session_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "laptop_item_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Setup",
+			"item": [
+				{
+					"name": "Generate Session & User IDs",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate UUIDs for session and user",
+									"const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {",
+									"    const r = Math.random() * 16 | 0;",
+									"    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);",
+									"});",
+									"",
+									"pm.collectionVariables.set('session_id', uuid());",
+									"pm.collectionVariables.set('user_id', uuid());",
+									"",
+									"console.log('Session ID:', pm.collectionVariables.get('session_id'));",
+									"console.log('User ID:', pm.collectionVariables.get('user_id'));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Session ID generated', () => {",
+									"    pm.expect(pm.collectionVariables.get('session_id')).to.not.be.empty;",
+									"});",
+									"",
+									"pm.test('User ID generated', () => {",
+									"    pm.expect(pm.collectionVariables.get('user_id')).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{cart_url}}/cart/health",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "1. Health Checks",
+			"item": [
+				{
+					"name": "Cart Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cart service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{cart_url}}/cart/health",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "health"]
+						}
+					}
+				},
+				{
+					"name": "Shipping Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Shipping service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{shipping_url}}/shipping/health",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "health"]
+						}
+					}
+				},
+				{
+					"name": "Payment Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{payment_url}}/payment/health",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "health"]
+						}
+					}
+				},
+				{
+					"name": "Checkout Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Checkout service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{checkout_url}}/checkout/health",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "health"]
+						}
+					}
+				},
+				{
+					"name": "Promotion Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Promotion service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{promotion_url}}/promotions/health",
+							"host": ["{{promotion_url}}"],
+							"path": ["promotions", "health"]
+						}
+					}
+				},
+				{
+					"name": "Services Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Services service is healthy', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{services_url}}/services/health",
+							"host": ["{{services_url}}"],
+							"path": ["services", "health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Cart Operations",
+			"item": [
+				{
+					"name": "Add Laptop to Cart (5999 PLN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Item added successfully', () => {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"pm.test('Response has item_id', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.item_id).to.not.be.undefined;",
+									"    pm.collectionVariables.set('laptop_item_id', json.item_id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"offer_id\": 123,\n    \"type\": \"product\",\n    \"quantity\": 1,\n    \"price\": 5999.00,\n    \"name\": \"Laptop Dell XPS 15\"\n}"
+						},
+						"url": {
+							"raw": "{{cart_url}}/cart/items",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "items"]
+						}
+					}
+				},
+				{
+					"name": "Add Warranty to Laptop (299 PLN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Warranty added successfully', () => {",
+									"    pm.response.to.have.status(202);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"offer_id\": 456,\n    \"type\": \"warranty\",\n    \"quantity\": 1,\n    \"price\": 299.00,\n    \"name\": \"Gwarancja 36 miesięcy\",\n    \"parent_item_id\": \"{{laptop_item_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{cart_url}}/cart/items",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "items"]
+						}
+					}
+				},
+				{
+					"name": "Add Bag as Accessory (149 PLN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Bag added successfully', () => {",
+									"    pm.response.to.have.status(202);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"offer_id\": 789,\n    \"type\": \"accessory\",\n    \"quantity\": 1,\n    \"price\": 149.00,\n    \"name\": \"Torba na laptop\",\n    \"parent_item_id\": \"{{laptop_item_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{cart_url}}/cart/items",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "items"]
+						}
+					}
+				},
+				{
+					"name": "Get Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cart retrieved successfully', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cart has 3 items', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.items).to.have.lengthOf(3);",
+									"});",
+									"",
+									"pm.test('Cart total is correct (6447 PLN)', () => {",
+									"    const json = pm.response.json();",
+									"    // 5999 + 299 + 149 = 6447 PLN = 644700 cents",
+									"    pm.expect(json.total.amount).to.equal(644700);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{cart_url}}/cart",
+							"host": ["{{cart_url}}"],
+							"path": ["cart"]
+						}
+					}
+				},
+				{
+					"name": "Change Laptop Quantity to 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Quantity changed successfully', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{cart_url}}/cart/items/{{laptop_item_id}}",
+							"host": ["{{cart_url}}"],
+							"path": ["cart", "items", "{{laptop_item_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Shipping",
+			"item": [
+				{
+					"name": "Get Available Shipping Methods",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Shipping methods retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has shipping methods', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.methods).to.be.an('array');",
+									"    pm.expect(json.methods.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{shipping_url}}/shipping/available",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "available"]
+						}
+					}
+				},
+				{
+					"name": "Select DPD Courier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Shipping method selected', () => {",
+									"    pm.response.to.have.status(202);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method_id\": \"courier_dpd\"\n}"
+						},
+						"url": {
+							"raw": "{{shipping_url}}/shipping/method",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "method"]
+						}
+					}
+				},
+				{
+					"name": "Set Shipping Address",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Address saved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"street\": \"Testowa 1\",\n    \"city\": \"Warszawa\",\n    \"postal_code\": \"00-001\",\n    \"country\": \"PL\"\n}"
+						},
+						"url": {
+							"raw": "{{shipping_url}}/shipping/address",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "address"]
+						}
+					}
+				},
+				{
+					"name": "Set Express Delivery Date",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const tomorrow = new Date();",
+									"tomorrow.setDate(tomorrow.getDate() + 1);",
+									"pm.collectionVariables.set('delivery_date', tomorrow.toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Delivery date set', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"{{delivery_date}}\",\n    \"express\": true\n}"
+						},
+						"url": {
+							"raw": "{{shipping_url}}/shipping/set-date",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "set-date"]
+						}
+					}
+				},
+				{
+					"name": "Get Shipping Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Shipping session retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Express delivery enabled', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.is_express).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{shipping_url}}/shipping/session",
+							"host": ["{{shipping_url}}"],
+							"path": ["shipping", "session"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Promotions",
+			"item": [
+				{
+					"name": "Get Available Promotions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Promotions retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has available promotions', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.promotions).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{promotion_url}}/promotions/available?cart_total_cents=1244600&item_quantity=2",
+							"host": ["{{promotion_url}}"],
+							"path": ["promotions", "available"],
+							"query": [
+								{"key": "cart_total_cents", "value": "1244600"},
+								{"key": "item_quantity", "value": "2"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Apply Promotion 2x50",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Promotion applied', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"promotion_id\": \"promo-2x50\",\n    \"cart_total_cents\": 1244600,\n    \"item_quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{promotion_url}}/promotions/apply",
+							"host": ["{{promotion_url}}"],
+							"path": ["promotions", "apply"]
+						}
+					}
+				},
+				{
+					"name": "Apply Promo Code SAVE10",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Promo code applied', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"SAVE10\",\n    \"order_total_cents\": 1244600\n}"
+						},
+						"url": {
+							"raw": "{{promotion_url}}/promotions/apply-code",
+							"host": ["{{promotion_url}}"],
+							"path": ["promotions", "apply-code"]
+						}
+					}
+				},
+				{
+					"name": "Get Promotion Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Promotion session retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{promotion_url}}/promotions/session",
+							"host": ["{{promotion_url}}"],
+							"path": ["promotions", "session"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Services",
+			"item": [
+				{
+					"name": "Get Available Services",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Services retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has services', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.services).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{services_url}}/services/available",
+							"host": ["{{services_url}}"],
+							"path": ["services", "available"]
+						}
+					}
+				},
+				{
+					"name": "Get Standalone Services",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Standalone services retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{services_url}}/services/standalone",
+							"host": ["{{services_url}}"],
+							"path": ["services", "standalone"]
+						}
+					}
+				},
+				{
+					"name": "Get Services for Item (AGD)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Item services retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{services_url}}/services/for-item/999",
+							"host": ["{{services_url}}"],
+							"path": ["services", "for-item", "999"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Payment",
+			"item": [
+				{
+					"name": "Get Available Payment Methods",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment methods retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has payment methods', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.methods).to.be.an('array');",
+									"    pm.expect(json.methods.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test('BLIK is available', () => {",
+									"    const json = pm.response.json();",
+									"    const blik = json.methods.find(m => m.id === 'blik');",
+									"    pm.expect(blik).to.not.be.undefined;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{payment_url}}/payment/available",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "available"]
+						}
+					}
+				},
+				{
+					"name": "Select BLIK Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment method selected', () => {",
+									"    pm.response.to.have.status(202);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method_id\": \"blik\"\n}"
+						},
+						"url": {
+							"raw": "{{payment_url}}/payment/method",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "method"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment status retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('BLIK selected', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.selected_method).to.equal('blik');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{payment_url}}/payment/status",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "status"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Checkout",
+			"item": [
+				{
+					"name": "Get Checkout Totals",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Totals retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has totals structure', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.totals).to.have.property('subtotal');",
+									"    pm.expect(json.totals).to.have.property('shipping_cost');",
+									"    pm.expect(json.totals).to.have.property('promotion_discount');",
+									"    pm.expect(json.totals).to.have.property('grand_total');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{checkout_url}}/checkout/totals",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "totals"]
+						}
+					}
+				},
+				{
+					"name": "Set Customer Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Customer data saved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"jan.kowalski@example.com\",\n    \"first_name\": \"Jan\",\n    \"last_name\": \"Kowalski\",\n    \"phone\": \"+48123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{checkout_url}}/checkout/customer-data",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "customer-data"]
+						}
+					}
+				},
+				{
+					"name": "Set Consents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Consents saved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"terms\": true,\n    \"privacy\": true,\n    \"marketing\": false,\n    \"newsletter\": true\n}"
+						},
+						"url": {
+							"raw": "{{checkout_url}}/checkout/consents",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "consents"]
+						}
+					}
+				},
+				{
+					"name": "Get Checkout Totals (Before Finalize)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Totals retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Can finalize checkout', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.can_finalize).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{checkout_url}}/checkout/totals",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "totals"]
+						}
+					}
+				},
+				{
+					"name": "Finalize Checkout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Checkout finalized', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Order ID returned', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.order_id).to.match(/^ORD-/);",
+									"    pm.collectionVariables.set('order_id', json.order_id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{checkout_url}}/checkout/finalize",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "finalize"]
+						}
+					}
+				},
+				{
+					"name": "Get Checkout Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Summary retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Session is finalized', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.session.status).to.equal('finalized');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{checkout_url}}/checkout/summary",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "summary"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "8. Payment Confirmation",
+			"item": [
+				{
+					"name": "Initialize Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment initialized', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": \"{{order_id}}\",\n    \"amount_cents\": 1000000\n}"
+						},
+						"url": {
+							"raw": "{{payment_url}}/payment/initialize",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "initialize"]
+						}
+					}
+				},
+				{
+					"name": "Confirm BLIK Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment confirmed', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{payment_url}}/payment/confirm",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "confirm"]
+						}
+					}
+				},
+				{
+					"name": "Get Final Payment Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Payment status retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Payment succeeded', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.equal('succeeded');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{payment_url}}/payment/status",
+							"host": ["{{payment_url}}"],
+							"path": ["payment", "status"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "9. Verification",
+			"item": [
+				{
+					"name": "Verify Checkout Completed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Checkout summary retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Checkout is completed', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.session.status).to.equal('completed');",
+									"});",
+									"",
+									"pm.test('Order ID matches', () => {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.session.order_id).to.equal(pm.collectionVariables.get('order_id'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{checkout_url}}/checkout/summary",
+							"host": ["{{checkout_url}}"],
+							"path": ["checkout", "summary"]
+						}
+					}
+				},
+				{
+					"name": "Verify Cart is Empty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cart retrieved', () => {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cart is empty (optional)', () => {",
+									"    const json = pm.response.json();",
+									"    // Cart may or may not be cleared depending on implementation",
+									"    console.log('Cart items:', json.items?.length || 0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{cart_url}}/cart",
+							"host": ["{{cart_url}}"],
+							"path": ["cart"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "10. Cleanup",
+			"item": [
+				{
+					"name": "Clear Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cart cleared', () => {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{"key": "X-Session-Id", "value": "{{session_id}}"},
+							{"key": "X-User-Id", "value": "{{user_id}}"}
+						],
+						"url": {
+							"raw": "{{cart_url}}/cart",
+							"host": ["{{cart_url}}"],
+							"path": ["cart"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,91 @@
+# Multi-stage Dockerfile dla optymalizacji produkcji
+# Użycie: docker build -f docker/php/Dockerfile.multistage --target production .
+
+# Stage 1: Composer dependencies (z PHP 8.4 i rdkafka)
+FROM php:8.4-fpm-alpine AS composer-deps
+
+RUN apk add --no-cache \
+    $PHPIZE_DEPS \
+    linux-headers \
+    librdkafka-dev
+
+RUN pecl install redis rdkafka \
+    && docker-php-ext-enable redis rdkafka
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+# Skopiuj composer.json dla cache layer
+COPY composer.json composer.lock* ./
+
+# Zainstaluj dependencies (bez autoload, bez dev dependencies dla produkcji)
+RUN composer install \
+    --no-interaction \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist
+
+# Stage 2: Bazowy PHP image
+FROM php:8.4-fpm-alpine AS base
+
+RUN apk add --no-cache \
+    $PHPIZE_DEPS \
+    linux-headers \
+    librdkafka-dev \
+    git \
+    unzip \
+    curl
+
+RUN pecl install redis rdkafka \
+    && docker-php-ext-enable redis rdkafka
+
+RUN docker-php-ext-install opcache
+
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY docker/php/conf.d/opcache.ini $PHP_INI_DIR/conf.d/opcache.ini
+COPY docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/app.ini
+
+WORKDIR /var/www/html
+
+RUN addgroup -g 1000 appgroup && adduser -u 1000 -G appgroup -s /bin/sh -D appuser
+
+# Stage 3: Development image (z composer, git, etc.)
+FROM base AS development
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+RUN mv "$PHP_INI_DIR/php.ini" "$PHP_INI_DIR/php.ini.bak" \
+    && mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+RUN chown -R appuser:appgroup /var/www
+
+USER appuser
+
+EXPOSE 9000
+
+CMD ["php-fpm"]
+
+# Stage 4: Production image (bez composer, zoptymalizowany)
+FROM base AS production
+
+# Skopiuj vendor z composer-deps stage
+COPY --from=composer-deps --chown=appuser:appgroup /app/vendor ./vendor
+
+# Skopiuj kod aplikacji
+COPY --chown=appuser:appgroup . .
+
+# Wygeneruj optimized autoloader
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+RUN rm /usr/bin/composer
+
+RUN chown -R appuser:appgroup /var/www
+
+USER appuser
+
+EXPOSE 9000
+
+CMD ["php-fpm"]

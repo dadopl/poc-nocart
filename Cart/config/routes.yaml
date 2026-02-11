@@ -1,0 +1,4 @@
+controllers:
+    resource: ../src/Ports/Http/
+    type: attribute
+

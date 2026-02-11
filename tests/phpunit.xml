@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         executionOrder="depends,defects"
+         cacheDirectory=".phpunit.cache"
+         requireCoverageMetadata="false"
+         beStrictAboutCoverageMetadata="false"
+         stopOnFailure="true">
+    <testsuites>
+        <testsuite name="E2E">
+            <directory>tests/Functional</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="CART_SERVICE_URL" value="http://localhost:8001"/>
+        <env name="SHIPPING_SERVICE_URL" value="http://localhost:8002"/>
+        <env name="PAYMENT_SERVICE_URL" value="http://localhost:8003"/>
+        <env name="CHECKOUT_SERVICE_URL" value="http://localhost:8004"/>
+        <env name="PROMOTION_SERVICE_URL" value="http://localhost:8005"/>
+        <env name="SERVICES_SERVICE_URL" value="http://localhost:8006"/>
+        <env name="KAFKA_SYNC_WAIT_MS" value="500"/>
+    </php>
+</phpunit>
+

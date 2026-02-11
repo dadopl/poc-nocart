@@ -1,0 +1,8 @@
+framework:
+    messenger:
+        transports:
+            kafka_consumer:
+                dsn: 'kafka://%env(KAFKA_BROKERS)%?topics=cart-events&group=shipping-consumer'
+
+        routing:
+            'Nocart\SharedKernel\Infrastructure\Messenger\Message\ExternalEventMessage': kafka_consumer

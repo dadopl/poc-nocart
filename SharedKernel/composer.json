@@ -1,0 +1,19 @@
+{
+    "name": "nocart/shared-kernel",
+    "description": "Shared Kernel - wspólne kontrakty dla mikroserwisów",
+    "type": "library",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Nocart\\SharedKernel\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=8.4",
+        "ext-rdkafka": "*",
+        "symfony/uid": "^7.2",
+        "symfony/framework-bundle": "^7.2",
+        "predis/predis": "^2.2"
+    }
+}
+

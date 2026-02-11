@@ -1,0 +1,27 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Nocart\Cart\:
+        resource: '../../src/'
+        exclude:
+            - '../../src/Domain/Aggregate/'
+            - '../../src/Domain/ValueObject/'
+            - '../../src/Domain/Event/'
+
+    Nocart\SharedKernel\Infrastructure\Persistence\RedisClientInterface:
+        class: Nocart\SharedKernel\Infrastructure\Persistence\PredisRedisClient
+        arguments:
+            $host: '%env(REDIS_HOST)%'
+            $port: '%env(int:REDIS_PORT)%'
+
+    Nocart\SharedKernel\Infrastructure\Messaging\EventPublisherInterface:
+        class: Nocart\SharedKernel\Infrastructure\Messaging\KafkaEventPublisher
+        arguments:
+            $brokers: '%env(KAFKA_BROKERS)%'
+
+    Nocart\Cart\Domain\Repository\CartRepositoryInterface:
+        class: Nocart\Cart\Infrastructure\Persistence\RedisCartRepository
+
+

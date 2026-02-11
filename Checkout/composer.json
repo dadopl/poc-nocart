@@ -1,0 +1,61 @@
+{
+    "name": "nocart/checkout-service",
+    "description": "Checkout Microservice - orchestrator procesu zakupowego",
+    "type": "project",
+    "license": "proprietary",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Nocart\\Checkout\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nocart\\Checkout\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/var/www/shared"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "ext-json": "*",
+        "ext-rdkafka": "*",
+        "nocart/shared-kernel": "@dev",
+        "symfony/console": "^7.2",
+        "symfony/framework-bundle": "^7.2",
+        "symfony/runtime": "^7.2",
+        "symfony/serializer": "^7.2",
+        "symfony/property-access": "^7.2",
+        "symfony/uid": "^7.2",
+        "symfony/yaml": "^7.2",
+        "symfony/messenger": "^7.2",
+        "predis/predis": "^2.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "symfony/test-pack": "^1.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        },
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd"
+        }
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "7.2.*"
+        }
+    }
+}

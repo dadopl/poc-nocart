@@ -1,0 +1,33 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Nocart\Shipping\:
+        resource: '../../src/'
+        exclude:
+            - '../../src/Domain/Aggregate/'
+            - '../../src/Domain/ValueObject/'
+            - '../../src/Domain/Event/'
+
+    Nocart\SharedKernel\Infrastructure\Persistence\RedisClientInterface:
+        class: Nocart\SharedKernel\Infrastructure\Persistence\PredisRedisClient
+        arguments:
+            $host: '%env(REDIS_HOST)%'
+            $port: '%env(int:REDIS_PORT)%'
+
+    Nocart\SharedKernel\Infrastructure\Messaging\EventPublisherInterface:
+        class: Nocart\SharedKernel\Infrastructure\Messaging\KafkaEventPublisher
+        arguments:
+            $brokers: '%env(KAFKA_BROKERS)%'
+
+    Nocart\Shipping\Domain\Repository\ShippingMethodRepositoryInterface:
+        class: Nocart\Shipping\Infrastructure\Persistence\InMemoryShippingMethodRepository
+
+    Nocart\Shipping\Domain\Repository\ShippingSessionRepositoryInterface:
+        class: Nocart\Shipping\Infrastructure\Persistence\RedisShippingSessionRepository
+
+    # Kafka Transport dla Symfony Messenger
+    Nocart\SharedKernel\Infrastructure\Messenger\KafkaTransportFactory:
+        tags:
+            - { name: messenger.transport_factory }
